@@ -1,24 +1,34 @@
 # Pocket · Personal Expense Tracker
 
-A responsive expense tracker for everyday spending in **Sri Lankan Rupees (LKR)**. Built with HTML, CSS and vanilla JavaScript, with no framework or build step.
+[![CI](https://github.com/DilumindaPeiris/personal-expense-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/DilumindaPeiris/personal-expense-tracker/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+A responsive expense tracker for everyday spending in **Sri Lankan Rupees (LKR)**. Built with HTML, CSS and vanilla JavaScript, with zero external runtime dependencies and no build step.
 
 ## Features
 
-- Add, edit and delete expenses with a description, category, amount and date.
-- Set an independent budget for each month, see the remaining balance and get an over-budget warning.
-- Filter by month and category, and search descriptions.
-- See daily spending and a category breakdown without a charting library.
-- Export the currently filtered expense list to CSV.
-- Save expenses and budgets automatically in browser `localStorage`.
-- Explore sample expenses in a separate, temporary demo mode.
-- Responsive layout, labelled forms, keyboard-accessible dialogs and reduced-motion support.
+- **Expense Tracking**: Add, edit and delete expenses with a description, category, amount (LKR) and date.
+- **Monthly Targets**: Set an independent budget for each month, view remaining balances and receive timely over-budget warnings.
+- **Month-over-Month Analytics**: Track spending trends compared to the previous month (percentage change) and see daily average expenditures.
+- **Flexible Filtering & Sorting**: Filter by month and category, search descriptions, and sort by date (newest/oldest) or amount (highest/lowest).
+- **Quick Month Navigation**: Effortlessly step forward and backward between months with one-click navigation arrows.
+- **Native Visualizations**: Dynamic daily spending rhythm bar chart and category donut breakdown built entirely with SVG and CSS.
+- **Full Data Backup & Restore**: Export complete JSON snapshots of all expenses and budgets, and restore them anytime with automatic schema validation.
+- **CSV Export**: Download filtered expenses to CSV with formula prefix sanitization for spreadsheet compatibility.
+- **Local Persistence**: Save records and budgets automatically in browser `localStorage`.
+- **Interactive Demo Mode**: Explore sample expenses safely without overriding personal records.
+- **Accessibility & Polish**: Semantic HTML, labelled forms, keyboard-navigable dialogs, responsive layout, and reduced-motion support.
 
 ## Run locally
 
-1. Download or clone this repository.
-2. Open **dist/index.html** in a modern browser. No installation is required.
+1. Download or clone this repository:
+   ```bash
+   git clone https://github.com/DilumindaPeiris/personal-expense-tracker.git
+   cd personal-expense-tracker
+   ```
+2. Open **dist/index.html** directly in any modern browser. No installation or build step is required.
 
-For more consistent browser storage behavior, serve the project with the VS Code **Live Server** extension and open `dist/index.html`, or run:
+For local server serving:
 
 ```bash
 python -m http.server 8080 --directory dist
@@ -28,69 +38,65 @@ Then visit `http://localhost:8080`.
 
 ## How to use
 
-1. Choose a month and click the pencil on **Monthly budget**.
-2. Enter your budget in LKR. Entering 0 removes that month's target.
-3. Click **Add expense**, complete the form, and save.
-4. Use the row actions to edit or delete an entry.
-5. Search or choose a category to narrow the expense list. Summary cards and charts always show the entire selected month.
-6. Click **Export CSV** to download the filtered results.
-7. Try **Explore with demo data** to preview a populated dashboard. Demo changes are temporary and never replace your real expenses.
+1. **Set Monthly Target**: Choose a month and click the pencil icon next to **Monthly budget**. Enter your target in LKR (entering 0 removes target).
+2. **Add Expenses**: Click **Add expense**, fill in description, amount, date and category, then save.
+3. **Navigate & Filter**:
+   - Use the **‹** and **›** buttons or the month picker to jump between months.
+   - Filter by category or enter search terms to locate specific entries.
+   - Use the sort selector to order expenses by date or amount.
+4. **Inspect Insights**: Review the daily spending rhythm bar chart and category breakdown donut. Check month-over-month trend percentages and daily averages.
+5. **Backup & Restore**:
+   - Click **Backup & restore** in the sidebar.
+   - Choose **Export JSON** to save a full backup copy of all expenses and budgets.
+   - Choose **Select file…** to restore from a previously exported backup JSON file.
+6. **Export CSV**: Click **Export CSV** to download currently filtered expenses for external analysis in Excel or Google Sheets.
+7. **Demo Exploration**: Click **Explore with demo data** to try out features with preloaded sample data without touching your saved records.
 
 ## Data and privacy
 
-Records are stored only in the current browser profile, under `pocket-expenses-v1`. There is no backend, account system or cross-device sync. Clearing site data removes saved records. Export your expenses before clearing browser data; CSV export does not include budgets and is not a restorable backup. Keep using the same browser and origin to access your saved records.
+Records are stored locally in your browser under the `pocket-expenses-v1` key. There is no backend, account registration, tracking, or cross-device cloud sync.
 
-Google Fonts is an optional styling request; system fonts are used when unavailable. No expense data is sent to Google or another server. The app itself works without a network connection after the files are downloaded.
-
-If saving fails, the app reports the error without replacing the previous saved state. If existing storage cannot be read, it is left untouched and changes remain in memory for that visit.
+- **Full Backups**: Use the **Backup & restore** feature to export a complete JSON snapshot containing all your expenses across all months and your monthly targets.
+- **Offline Capable**: Pocket works fully offline. Google Fonts is an optional styling asset; system fonts will gracefully take over if network access is absent.
+- **Data Safety**: If saving fails, Pocket retains previous states in memory without corrupting storage.
 
 ## Project structure
 
 ```text
+.github/
+  workflows/
+    ci.yml           Automated testing on Node 18, 20, 22
 dist/
-  index.html       Accessible app markup and dialogs
-  style.css        Responsive layout and visual design
-  domain.js        Validation, money calculations, filtering and CSV export
-  script.js        UI interactions and browser storage
-  icon.svg         App favicon
+  index.html         Accessible app markup and dialogs
+  style.css          Responsive design system and animations
+  domain.js          Validation, money math, analytics, backup and CSV export
+  script.js          UI interaction controller and local storage management
+  icon.svg           Pocket app icon
 tests/
-  domain.test.js   Unit tests using Node's built-in test runner
-package.json
-README.md
-LICENSE
+  domain.test.js     Automated test suite using Node's native test runner
+package.json         Project scripts and development metadata
+README.md            Project documentation and guide
+LICENSE              MIT license
 ```
 
-Amounts are stored as integer cents to avoid floating-point errors. User-entered descriptions are rendered as text. CSV fields are quoted and spreadsheet formula prefixes are neutralized.
+## Automated Verification
 
-## Checks
-
-Node.js 18 or newer is needed only for development checks. No npm dependencies are required.
+Pocket uses Node.js's built-in native test runner with zero npm dependencies:
 
 ```bash
 npm test
 npm run check
 ```
 
-Tests cover currency precision, invalid dates, saved-data validation, monthly totals, combined filters and safe CSV output.
-
-## Upload to GitHub
-
-1. Create a repository named **personal-expense-tracker** on GitHub.
-2. Choose **uploading an existing file** and drag in the extracted project contents.
-3. Commit the files with a clear message, such as `Build Pocket expense tracker`.
-
-Or, from the extracted project folder:
-
-```bash
-git init
-git add .
-git commit -m "Build Pocket expense tracker"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/personal-expense-tracker.git
-git push -u origin main
-```
-
-For GitHub Pages from a branch, place the files inside `dist/` at the repository root, then select that branch and `/ (root)` in Pages settings. The app uses relative asset paths and supports repository subpaths. If you move files out of `dist/`, also update the paths in `package.json` and the test import.
+Automated tests cover:
+- Currency precision and integer cents conversion
+- Strict date validation and leap year handling
+- Corrupt data rejection and duplicate ID detection
+- Monthly total exclusions and category breakdowns
+- Combined category, text search, and multi-criteria sorting
+- Safe CSV formula injection neutralization
+- JSON backup export serialization and validated restore deserialization
+- Month-over-month trend comparison and daily average calculation
 
 ## License
 
