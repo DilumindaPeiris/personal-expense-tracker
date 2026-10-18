@@ -1,0 +1,8 @@
+{
+  "name": "personal-expense-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pocket: a dependency-free personal expense tracker in LKR",
+  "scripts": { "test": "node --test tests/domain.test.js", "check": "node --check dist/domain.js && node --check dist/script.js" },
+  "license": "MIT"
+}
