@@ -43,9 +43,15 @@
     const total = rows.reduce((sum, e) => sum + e.amount, 0);
     return { rows, total, remaining: budget - total, count: rows.length, byCategory: CATEGORIES.map(c => ({ ...c, total: rows.filter(e => e.category === c.id).reduce((s, e) => s + e.amount, 0) })).filter(c => c.total > 0).sort((a, b) => b.total - a.total) };
   }
-  function filteredExpenses(rows, category, query) {
+  function filteredExpenses(rows, category, query, sortBy = 'date-desc') {
     const term = query.trim().toLowerCase();
-    return rows.filter(e => (category === 'all' || e.category === category) && e.description.toLowerCase().includes(term)).sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+    const filtered = rows.filter(e => (category === 'all' || e.category === category) && e.description.toLowerCase().includes(term));
+    return filtered.sort((a, b) => {
+      if (sortBy === 'date-asc') return a.date.localeCompare(b.date) || a.id.localeCompare(b.id);
+      if (sortBy === 'amount-desc') return b.amount - a.amount || b.date.localeCompare(a.date);
+      if (sortBy === 'amount-asc') return a.amount - b.amount || b.date.localeCompare(a.date);
+      return b.date.localeCompare(a.date) || b.id.localeCompare(a.id);
+    });
   }
   function toCsv(rows) {
     function cell(value) { let s = String(value); if (/^[\s]*[=+\-@\t\r\n]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }
@@ -77,6 +83,13 @@
     if (m === 1) return (year - 1) + '-12';
     return year + '-' + String(m - 1).padStart(2, '0');
   }
+  function getNextMonth(month) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Invalid month format.');
+    const year = Number(month.slice(0, 4));
+    const m = Number(month.slice(5, 7));
+    if (m === 12) return (year + 1) + '-01';
+    return year + '-' + String(m + 1).padStart(2, '0');
+  }
   function monthComparison(expenses, currentMonth) {
     const prevMonth = getPreviousMonth(currentMonth);
     const currentTotal = expenses.filter(e => e.date.slice(0, 7) === currentMonth).reduce((s, e) => s + e.amount, 0);
@@ -95,7 +108,7 @@
     const days = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
     return Math.round(totalCents / days);
   }
-  const api = { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup, getPreviousMonth, monthComparison, dailyAverage };
+  const api = { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup, getPreviousMonth, getNextMonth, monthComparison, dailyAverage };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Pocket = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

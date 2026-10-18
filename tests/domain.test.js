@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {parseMoney,validDate,validateExpense,validateState,monthlySummary,filteredExpenses,toCsv,exportBackup,importBackup,getPreviousMonth,monthComparison,dailyAverage}=require('../dist/domain.js');
+const {parseMoney,validDate,validateExpense,validateState,monthlySummary,filteredExpenses,toCsv,exportBackup,importBackup,getPreviousMonth,getNextMonth,monthComparison,dailyAverage}=require('../dist/domain.js');
 const expense=(changes={})=>({id:'a',description:'Lunch',amount:1050,date:'2026-10-18',category:'food',...changes});
 test('money uses integer cents and accepts a removable zero budget',()=>{assert.equal(parseMoney('0.29'),29);assert.equal(parseMoney('2500.50'),250050);assert.equal(parseMoney('0',true),0);for(const s of ['0','-1','1.001','NaN','Infinity','1e5','1000000000',''])assert.throws(()=>parseMoney(s));});
 test('dates reject normalized invalid dates and preserve leap days',()=>{assert.equal(validDate('2026-02-30'),false);assert.equal(validDate('2024-02-29'),true);assert.equal(validDate('2026-02-29'),false);assert.equal(validDate('0000-01-01'),false);assert.equal(validDate('2026-10-18'),true);});
@@ -13,6 +13,9 @@ test('analytics handles month navigation, comparison metrics and daily averages'
   assert.equal(getPreviousMonth('2026-10'),'2026-09');
   assert.equal(getPreviousMonth('2026-01'),'2025-12');
   assert.throws(()=>getPreviousMonth('invalid'));
+  assert.equal(getNextMonth('2026-10'),'2026-11');
+  assert.equal(getNextMonth('2026-12'),'2027-01');
+  assert.throws(()=>getNextMonth('invalid'));
   const rows=[
     expense({date:'2026-09-15',amount:100000}),
     expense({date:'2026-10-05',amount:120000}),
@@ -29,5 +32,16 @@ test('analytics handles month navigation, comparison metrics and daily averages'
   assert.equal(noPrev.percentChange,100);
   assert.equal(dailyAverage(310000,'2026-10'),10000);
 });
+test('filteredExpenses supports multiple sort criteria',()=>{
+  const rows=[
+    expense({id:'1',amount:1000,date:'2026-10-01'}),
+    expense({id:'2',amount:5000,date:'2026-10-05'}),
+    expense({id:'3',amount:2500,date:'2026-10-03'})
+  ];
+  assert.deepEqual(filteredExpenses(rows,'all','','date-asc').map(e=>e.id),['1','3','2']);
+  assert.deepEqual(filteredExpenses(rows,'all','','amount-desc').map(e=>e.id),['2','3','1']);
+  assert.deepEqual(filteredExpenses(rows,'all','','amount-asc').map(e=>e.id),['1','3','2']);
+});
+
 
 

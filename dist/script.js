@@ -1,6 +1,6 @@
 /* Pocket UI. No server, build step, or third-party JavaScript. */
 'use strict';
-const { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup, getPreviousMonth, monthComparison, dailyAverage } = Pocket;
+const { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup, getPreviousMonth, getNextMonth, monthComparison, dailyAverage } = Pocket;
 const $ = id => document.getElementById(id);
 const STORAGE_KEY = 'pocket-expenses-v1';
 const emptyState = () => ({ version: 1, expenses: [], budgets: {} });
@@ -29,7 +29,7 @@ function monthLabel(month) { return new Date(month + '-01T12:00:00').toLocaleDat
 function render() {
   const month = $('month-filter').value, data = currentData(), budget = data.budgets[month] || 0;
   const summary = monthlySummary(data.expenses, month, budget);
-  const rows = filteredExpenses(summary.rows, $('category-filter').value, $('search').value);
+  const rows = filteredExpenses(summary.rows, $('category-filter').value, $('search').value, $('sort-filter').value);
   $('demo-banner').hidden = !demo;
   $('budget-value').textContent = money(budget);
   $('spent-value').textContent = money(summary.total);
@@ -178,8 +178,10 @@ $('expense-form').addEventListener('submit',event=>{
 $('budget-form').addEventListener('submit',event=>{ event.preventDefault(); try { const value=parseMoney($('budget-input').value,true), data=currentData(); commit({...data,budgets:{...data.budgets,[$('month-filter').value]:value}}); $('budget-dialog').close(); render(); saveMessage('Monthly budget saved.'); } catch(error) { $('budget-error').textContent=error.message; } });
 $('confirm-delete').addEventListener('click',()=>{ try { const data=currentData(); commit({...data,expenses:data.expenses.filter(e=>e.id !== deletingId)}); $('delete-dialog').close(); render(); saveMessage('Expense deleted.'); } catch(error) { toast(error.message); } });
 $('month-filter').addEventListener('change',()=>{if(!/^\d{4}-(0[1-9]|1[0-2])$/.test($('month-filter').value)) $('month-filter').value=today.slice(0,7);render();});
-$('category-filter').addEventListener('change',render); $('search').addEventListener('input',render);
-$('export-csv').addEventListener('click',()=>{ const rows=filteredExpenses(monthlySummary(currentData().expenses,$('month-filter').value,0).rows,$('category-filter').value,$('search').value); const url=URL.createObjectURL(new Blob([toCsv(rows)],{type:'text/csv;charset=utf-8;'})); const a=document.createElement('a');a.href=url;a.download='pocket-expenses-'+$('month-filter').value+(demo ? '-demo' : '')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Filtered expenses exported as CSV.'); });
+$('prev-month-btn').addEventListener('click',()=>{ try { $('month-filter').value=getPreviousMonth($('month-filter').value); render(); } catch(_) {} });
+$('next-month-btn').addEventListener('click',()=>{ try { $('month-filter').value=getNextMonth($('month-filter').value); render(); } catch(_) {} });
+$('category-filter').addEventListener('change',render); $('sort-filter').addEventListener('change',render); $('search').addEventListener('input',render);
+$('export-csv').addEventListener('click',()=>{ const rows=filteredExpenses(monthlySummary(currentData().expenses,$('month-filter').value,0).rows,$('category-filter').value,$('search').value,$('sort-filter').value); const url=URL.createObjectURL(new Blob([toCsv(rows)],{type:'text/csv;charset=utf-8;'})); const a=document.createElement('a');a.href=url;a.download='pocket-expenses-'+$('month-filter').value+(demo ? '-demo' : '')+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Filtered expenses exported as CSV.'); });
 $('demo-button').addEventListener('click',()=>{
   const month=today.slice(0,7), items=[['Grocery run',325000,'food',2],['Bus & train pass',180000,'transport',4],['Coffee with friends',85000,'food',6],['Internet bill',249000,'bills',8],['New reading list',175000,'education',10],['Weekend lunch',215000,'food',12],['Everyday essentials',320000,'shopping',14],['Movie night',160000,'leisure',16],['Lunch at university',65000,'food',18]];
   demo={version:1,budgets:{[month]:2000000},expenses:items.map((e,i)=>({id:'demo-'+i,description:e[0],amount:e[1],category:e[2],date:month+'-'+String(e[3]).padStart(2,'0')}))};
