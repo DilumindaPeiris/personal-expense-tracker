@@ -1,6 +1,6 @@
 /* Pocket UI. No server, build step, or third-party JavaScript. */
 'use strict';
-const { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup } = Pocket;
+const { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup, getPreviousMonth, monthComparison, dailyAverage } = Pocket;
 const $ = id => document.getElementById(id);
 const STORAGE_KEY = 'pocket-expenses-v1';
 const emptyState = () => ({ version: 1, expenses: [], budgets: {} });
@@ -33,6 +33,17 @@ function render() {
   $('demo-banner').hidden = !demo;
   $('budget-value').textContent = money(budget);
   $('spent-value').textContent = money(summary.total);
+  const comp = monthComparison(data.expenses, month);
+  const avg = dailyAverage(summary.total, month);
+  $('spent-daily-avg').textContent = summary.total > 0 ? compactMoney(avg) + '/day avg' : '';
+  if (comp.prevTotal > 0) {
+    $('spent-trend').hidden = false;
+    const isHigher = comp.diff > 0, isLower = comp.diff < 0;
+    $('spent-trend').className = 'trend-badge ' + (isLower ? 'positive' : isHigher ? 'negative' : 'neutral');
+    $('spent-trend').textContent = (isLower ? '↓ ' : isHigher ? '↑ ' : '') + Math.abs(comp.percentChange) + '% vs last mo';
+  } else {
+    $('spent-trend').hidden = true;
+  }
   $('remaining-value').textContent = budget ? money(summary.remaining) : '—';
   $('remaining-value').classList.toggle('negative', budget > 0 && summary.remaining < 0);
   $('remaining-note').textContent = !budget ? 'Set a budget to see your balance.' : summary.remaining < 0 ? 'Time to give your budget a little attention.' : 'Available for the things that matter.';

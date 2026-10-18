@@ -70,7 +70,32 @@
     }
     return validateState(parsed);
   }
-  const api = { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup };
+  function getPreviousMonth(month) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Invalid month format.');
+    const year = Number(month.slice(0, 4));
+    const m = Number(month.slice(5, 7));
+    if (m === 1) return (year - 1) + '-12';
+    return year + '-' + String(m - 1).padStart(2, '0');
+  }
+  function monthComparison(expenses, currentMonth) {
+    const prevMonth = getPreviousMonth(currentMonth);
+    const currentTotal = expenses.filter(e => e.date.slice(0, 7) === currentMonth).reduce((s, e) => s + e.amount, 0);
+    const prevTotal = expenses.filter(e => e.date.slice(0, 7) === prevMonth).reduce((s, e) => s + e.amount, 0);
+    const diff = currentTotal - prevTotal;
+    let percentChange = 0;
+    if (prevTotal === 0) {
+      percentChange = currentTotal > 0 ? 100 : 0;
+    } else {
+      percentChange = Math.round(((currentTotal - prevTotal) / prevTotal) * 1000) / 10;
+    }
+    return { currentMonth, prevMonth, currentTotal, prevTotal, diff, percentChange };
+  }
+  function dailyAverage(totalCents, month) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Invalid month format.');
+    const days = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0).getDate();
+    return Math.round(totalCents / days);
+  }
+  const api = { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup, getPreviousMonth, monthComparison, dailyAverage };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Pocket = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
