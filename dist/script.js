@@ -1,6 +1,6 @@
 /* Pocket UI. No server, build step, or third-party JavaScript. */
 'use strict';
-const { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv } = Pocket;
+const { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup } = Pocket;
 const $ = id => document.getElementById(id);
 const STORAGE_KEY = 'pocket-expenses-v1';
 const emptyState = () => ({ version: 1, expenses: [], budgets: {} });
@@ -114,8 +114,46 @@ function openExpense(expense) {
 }
 function openBudget() { $('budget-month-label').textContent = 'Your plan for '+monthLabel($('month-filter').value); $('budget-input').value = ((currentData().budgets[$('month-filter').value] || 0)/100).toFixed(2); $('budget-error').textContent=''; $('budget-dialog').showModal(); $('budget-input').select(); }
 function openDelete(e) { deletingId=e.id; $('delete-description').textContent=e.description+' · '+money(e.amount); $('delete-dialog').showModal(); }
+let pendingRestore = null;
+function openBackup() { $('backup-error').textContent=''; $('restore-preview').hidden=true; $('restore-file-input').value=''; pendingRestore=null; $('backup-dialog').showModal(); }
 ['add-expense','empty-add'].forEach(id => $(id).addEventListener('click',()=>openExpense()));
 ['edit-budget','budget-nav'].forEach(id => $(id).addEventListener('click',openBudget));
+$('backup-nav').addEventListener('click',openBackup);
+$('export-backup-btn').addEventListener('click',()=>{
+  try {
+    const json = exportBackup(currentData());
+    const blob = new Blob([json],{type:'application/json;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'pocket-backup-'+today+(demo ? '-demo' : '')+'.json'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast('Backup exported as JSON.');
+  } catch(err) { $('backup-error').textContent = err.message; }
+});
+$('choose-restore-btn').addEventListener('click',()=>$('restore-file-input').click());
+$('restore-file-input').addEventListener('change',event=>{
+  const file = event.target.files?.[0]; if (!file) return;
+  $('backup-error').textContent='';
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const validated = importBackup(reader.result);
+      pendingRestore = validated;
+      const expCount = validated.expenses.length, bCount = Object.keys(validated.budgets).length;
+      $('restore-preview-text').textContent = 'Found '+expCount+' expense'+(expCount === 1 ? '' : 's')+' and '+bCount+' monthly target'+(bCount === 1 ? '' : 's')+'. Restoring will replace existing records.';
+      $('restore-preview').hidden = false;
+    } catch(err) { pendingRestore=null; $('restore-preview').hidden=true; $('backup-error').textContent = err.message; }
+  };
+  reader.onerror = () => { $('backup-error').textContent = 'Could not read backup file.'; };
+  reader.readAsText(file);
+});
+$('confirm-restore-btn').addEventListener('click',()=>{
+  if (!pendingRestore) return;
+  try {
+    commit(pendingRestore); pendingRestore = null; $('restore-preview').hidden = true; $('backup-dialog').close(); render();
+    saveMessage('Backup successfully restored.');
+  } catch(err) { $('backup-error').textContent = err.message; }
+});
+$('cancel-restore-btn').addEventListener('click',()=>{ pendingRestore = null; $('restore-preview').hidden = true; $('restore-file-input').value = ''; });
 document.querySelectorAll('[data-close]').forEach(button=>button.addEventListener('click',()=>$(button.dataset.close).close()));
 $('expense-form').addEventListener('submit',event=>{
   event.preventDefault();

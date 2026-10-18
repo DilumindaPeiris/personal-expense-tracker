@@ -51,7 +51,26 @@
     function cell(value) { let s = String(value); if (/^[\s]*[=+\-@\t\r\n]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; }
     return '\uFEFF' + [['Date','Description','Category','Amount (LKR)'], ...rows.map(e => [e.date, e.description, CATEGORIES.find(c => c.id === e.category).name, (e.amount / 100).toFixed(2)])].map(row => row.map(cell).join(',')).join('\r\n');
   }
-  const api = { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv };
+  function exportBackup(state) {
+    const validated = validateState(state);
+    return JSON.stringify({
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      budgets: validated.budgets,
+      expenses: validated.expenses
+    }, null, 2);
+  }
+  function importBackup(jsonString) {
+    if (typeof jsonString !== 'string') throw new Error('Backup data must be a valid JSON string.');
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonString);
+    } catch (_) {
+      throw new Error('Invalid JSON file format.');
+    }
+    return validateState(parsed);
+  }
+  const api = { CATEGORIES, parseMoney, validDate, validateExpense, validateState, monthlySummary, filteredExpenses, toCsv, exportBackup, importBackup };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Pocket = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
